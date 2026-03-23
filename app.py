@@ -5,7 +5,13 @@ import io
 import base64
 
 # ===== 中文字體設定 =====
-plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei']
+plt.rcParams['font.sans-serif'] = [
+    'Microsoft JhengHei', 
+    'Arial Unicode MS', 
+    'Noto Sans CJK TC',
+    'SimHei'
+]
+plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['axes.unicode_minus'] = False
 
 app = Flask(__name__)
