@@ -6,20 +6,16 @@ import io
 import base64
 import os
 
-# ===== 中文字體設定 =====
-try:
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    font_path = os.path.join(base_dir, "fonts", "NotoSansTC-Regular.ttf")
-
-    font_prop = fm.FontProperties(fname=font_path)
-    plt.rcParams['font.family'] = font_prop.get_name()
-    plt.rcParams['axes.unicode_minus'] = False
-
-except Exception as e:
-    print("字體載入失敗:", e)
-    font_prop = None
-
 app = Flask(__name__)
+
+# ===== 字體修正（Render可用）=====
+try:
+    font_path = os.path.join("fonts", "NotoSansTC-Regular.ttf")
+    fm.fontManager.addfont(font_path)
+    plt.rcParams['font.family'] = 'Noto Sans TC'
+    plt.rcParams['axes.unicode_minus'] = False
+except:
+    print("字體載入失敗")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -27,40 +23,35 @@ def index():
     chart = None
 
     if request.method == "POST":
-        try:
-            data = pd.read_csv("data.csv")
+        file = request.files.get("file")
 
-            # 🔥 修正欄位名稱（你的CSV是 power_kw）
-            total_usage = data["power_kw"].sum()
-            avg_usage = data["power_kw"].mean()
+        if file:
+            df = pd.read_csv(file)
+
+            total = df["power_kw"].sum()
+            avg = df["power_kw"].mean()
 
             result = {
-                "total": round(total_usage, 2),
-                "avg": round(avg_usage, 2)
+                "total": round(total, 2),
+                "avg": round(avg, 2)
             }
 
-            # 📈 畫圖
+            # 畫圖
             plt.figure()
-            plt.plot(data["power_kw"])
+            plt.plot(df["hour"], df["power_kw"], marker='o')
             plt.title("用電趨勢")
-            plt.xlabel("時間索引")
-            plt.ylabel("用電量 (kW)")
+            plt.xlabel("時間")
+            plt.ylabel("用電(kW)")
 
             img = io.BytesIO()
             plt.savefig(img, format='png')
             img.seek(0)
-
             chart = base64.b64encode(img.getvalue()).decode()
-
             plt.close()
-
-        except Exception as e:
-            result = {"error": str(e)}
 
     return render_template("index.html", result=result, chart=chart)
 
 
-# 🔥 Render 必備（超關鍵）
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
