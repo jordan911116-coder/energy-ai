@@ -1,112 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI用電分析系統</title>
-    <style>
-        body {
-            font-family: "Microsoft JhengHei", sans-serif;
-            background: #f5f7fa;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: auto;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
-
-        h1 {
-            text-align: center;
-        }
-
-        .upload-box {
-            text-align: center;
-        }
-
-        button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .result {
-            display: flex;
-            justify-content: space-between;
-            text-align: center;
-        }
-
-        .result div {
-            flex: 1;
-        }
-
-        .highlight {
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        img {
-            width: 100%;
-            margin-top: 20px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <title>能源分析系統</title>
 </head>
-
 <body>
+    <h1>AI能源分析</h1>
 
-<div class="container">
-
-    <h1>⚡ AI 用電分析系統</h1>
-
-    <div class="card upload-box">
-        <h2>📂 上傳 CSV</h2>
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="file"><br><br>
-            <button type="submit">開始分析</button>
-        </form>
-    </div>
+    <form method="post">
+        <button type="submit">分析資料</button>
+    </form>
 
     {% if result %}
-    <div class="card">
-        <h2>📊 分析結果</h2>
-
-        <div class="result">
-            <div>
-                <p>平均用電</p>
-                <p class="highlight">{{ result.average }}</p>
-            </div>
-            <div>
-                <p>浪費電量</p>
-                <p class="highlight">{{ result.wasted }}</p>
-            </div>
-            <div>
-                <p>浪費金額</p>
-                <p class="highlight">{{ result.cost }} 元</p>
-            </div>
-            <div>
-                <p>AI預測用電</p>
-                <p class="highlight">{{ result.predict }} kW</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>📈 用電趨勢</h2>
-        <img src="data:image/png;base64,{{ result.plot }}">
-    </div>
+        <h2>結果：</h2>
+        <p>總用電：{{ result.total }}</p>
+        <p>平均用電：{{ result.avg }}</p>
     {% endif %}
 
-</div>
+    {% if chart %}
+        <h2>圖表：</h2>
+        <img src="data:image/png;base64,{{ chart }}">
+    {% endif %}
 
 </body>
 </html>
