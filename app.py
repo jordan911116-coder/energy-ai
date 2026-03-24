@@ -6,7 +6,7 @@ import io
 import base64
 import os
 
-# ===== 中文字體設定=====
+# ===== 中文字體設定 =====
 try:
     base_dir = os.path.dirname(os.path.abspath(__file__))
     font_path = os.path.join(base_dir, "fonts", "NotoSansTC-Regular.ttf")
@@ -24,47 +24,43 @@ app = Flask(__name__)
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
+    chart = None
 
     if request.method == "POST":
-        file = request.files["file"]
-        df = pd.read_csv(file)
+        try:
+            data = pd.read_csv("data.csv")
 
-        # ===== 基本分析 =====
-        average = df["power_kw"].mean()
-        wasted_energy = sum([p - average for p in df["power_kw"] if p > average])
-        cost = wasted_energy * 3
+            # 🔥 修正欄位名稱（你的CSV是 power_kw）
+            total_usage = data["power_kw"].sum()
+            avg_usage = data["power_kw"].mean()
 
-        # ===== AI預測（簡單版）=====
-        next_power = df["power_kw"].iloc[-1] * 1.1
+            result = {
+                "total": round(total_usage, 2),
+                "avg": round(avg_usage, 2)
+            }
 
-        # ===== 產生圖表 =====
-        plt.figure()
-        plt.plot(df["hour"], df["power_kw"], marker='o')
+            # 📈 畫圖
+            plt.figure()
+            plt.plot(data["power_kw"])
+            plt.title("用電趨勢")
+            plt.xlabel("時間索引")
+            plt.ylabel("用電量 (kW)")
 
-        if font_prop:
-            plt.xlabel("時間", fontproperties=font_prop)
-            plt.ylabel("用電 (kW)", fontproperties=font_prop)
-            plt.title("用電趨勢圖", fontproperties=font_prop)
-        else:
-            plt.xlabel("時間")
-            plt.ylabel("用電 (kW)")
-            plt.title("用電趨勢圖")
+            img = io.BytesIO()
+            plt.savefig(img, format='png')
+            img.seek(0)
 
-        img = io.BytesIO()
-        plt.savefig(img, format='png', bbox_inches='tight')
-        plt.close()
-        img.seek(0)
-        plot_url = base64.b64encode(img.getvalue()).decode()
+            chart = base64.b64encode(img.getvalue()).decode()
 
-        result = {
-            "average": round(average, 2),
-            "wasted": round(wasted_energy, 2),
-            "cost": round(cost, 2),
-            "predict": round(next_power, 2),
-            "plot": plot_url
-        }
+            plt.close()
 
-    return render_template("index.html", result=result)
+        except Exception as e:
+            result = {"error": str(e)}
 
+    return render_template("index.html", result=result, chart=chart)
+
+
+# 🔥 Render 必備（超關鍵）
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
