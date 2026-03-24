@@ -8,7 +8,7 @@ import os
 
 app = Flask(__name__)
 
-# ===== 中文字體設定（Render穩定版）=====
+# ===== 中文字體設定（Render穩定）=====
 font_prop = None
 try:
     font_path = os.path.join("fonts", "NotoSansTC-Regular.ttf")
@@ -27,9 +27,20 @@ def index():
 
         if file:
             try:
-                df = pd.read_csv(file)
+                # ===== 修正CSV讀取問題 =====
+                df = pd.read_csv(file, encoding='utf-8')
+                df.columns = df.columns.str.strip()
 
-                # ===== 基本分析 =====
+                print("📊 CSV內容：")
+                print(df.head())
+
+                # ===== 檢查欄位 =====
+                if "power_kw" not in df.columns:
+                    return render_template("index.html",
+                                           result={"error": "CSV缺少 power_kw 欄位"},
+                                           chart=None)
+
+                # ===== 分析 =====
                 total = df["power_kw"].sum()
                 avg = df["power_kw"].mean()
 
@@ -38,9 +49,16 @@ def index():
                     "avg": round(avg, 2)
                 }
 
-                # ===== 畫圖（重點：指定字體）=====
+                # ===== 畫圖 =====
                 plt.figure()
-                plt.plot(df["hour"], df["power_kw"], marker='o')
+
+                # 如果有hour就用，沒有就用index
+                if "hour" in df.columns:
+                    x = df["hour"]
+                else:
+                    x = range(len(df))
+
+                plt.plot(x, df["power_kw"], marker='o')
 
                 if font_prop:
                     plt.title("用電趨勢", fontproperties=font_prop)
@@ -58,12 +76,13 @@ def index():
                 plt.close()
 
             except Exception as e:
+                print("❌ 錯誤：", e)
                 result = {"error": str(e)}
 
     return render_template("index.html", result=result, chart=chart)
 
 
-# ===== Render 啟動必要 =====
+# ===== Render啟動 =====
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
