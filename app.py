@@ -5,9 +5,13 @@ import matplotlib.font_manager as fm
 import io
 import base64
 
-# ===== 中文字體設定（最穩定版本）=====
-font_path = "fonts/NotoSansTC-Regular.ttf"
+import os
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+font_path = os.path.join(base_dir, "fonts", "NotoSansTC-Regular.ttf")
+
 font_prop = fm.FontProperties(fname=font_path)
+
 
 plt.rcParams['font.family'] = font_prop.get_name()
 plt.rcParams['axes.unicode_minus'] = False
