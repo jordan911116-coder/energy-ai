@@ -4,17 +4,20 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import io
 import base64
-
 import os
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-font_path = os.path.join(base_dir, "fonts", "NotoSansTC-Regular.ttf")
+# ===== 中文字體設定=====
+try:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(base_dir, "fonts", "NotoSansTC-Regular.ttf")
 
-font_prop = fm.FontProperties(fname=font_path)
+    font_prop = fm.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = font_prop.get_name()
+    plt.rcParams['axes.unicode_minus'] = False
 
-
-plt.rcParams['font.family'] = font_prop.get_name()
-plt.rcParams['axes.unicode_minus'] = False
+except Exception as e:
+    print("字體載入失敗:", e)
+    font_prop = None
 
 app = Flask(__name__)
 
@@ -38,17 +41,21 @@ def index():
         plt.figure()
         plt.plot(df["hour"], df["power_kw"], marker='o')
 
-        plt.xlabel("時間", fontproperties=font_prop)
-        plt.ylabel("用電 (kW)", fontproperties=font_prop)
-        plt.title("用電趨勢圖", fontproperties=font_prop)
+        if font_prop:
+            plt.xlabel("時間", fontproperties=font_prop)
+            plt.ylabel("用電 (kW)", fontproperties=font_prop)
+            plt.title("用電趨勢圖", fontproperties=font_prop)
+        else:
+            plt.xlabel("時間")
+            plt.ylabel("用電 (kW)")
+            plt.title("用電趨勢圖")
 
         img = io.BytesIO()
         plt.savefig(img, format='png', bbox_inches='tight')
-        plt.close()  # 🔥 防止記憶體爆掉（順便幫你優化）
+        plt.close()
         img.seek(0)
         plot_url = base64.b64encode(img.getvalue()).decode()
 
-        # ===== 傳給前端 =====
         result = {
             "average": round(average, 2),
             "wasted": round(wasted_energy, 2),
