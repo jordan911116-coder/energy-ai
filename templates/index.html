@@ -15,8 +15,14 @@
 
 {% if result %}
 <h2>結果：</h2>
+
+{% if result.error %}
+<p style="color:red;">錯誤：{{ result.error }}</p>
+{% else %}
 <p>總用電：{{ result.total }}</p>
 <p>平均用電：{{ result.avg }}</p>
+{% endif %}
+
 {% endif %}
 
 {% if chart %}
