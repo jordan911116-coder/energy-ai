@@ -2,14 +2,18 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>AI能源分析（升級版）</title>
+    <title>AI能源分析（進階版）</title>
 </head>
 <body>
 
-<h1>AI能源分析（升級版）</h1>
+<h1>AI能源分析（AI進階版）</h1>
 
 <form method="post" enctype="multipart/form-data">
-    <input type="file" name="file" required>
+    <input type="file" name="file" required><br><br>
+
+    電費單價（元/度）：
+    <input type="number" name="price" value="5" step="0.1"><br><br>
+
     <button type="submit">上傳並分析</button>
 </form>
 
@@ -21,6 +25,8 @@
 {% else %}
 <p>總用電：{{ result.total }}</p>
 <p>平均用電：{{ result.avg }}</p>
+<p>預估電費：{{ result.cost }} 元</p>
+<p>AI預測下一時段用電：{{ result.predicted }}</p>
 {% endif %}
 
 {% endif %}
