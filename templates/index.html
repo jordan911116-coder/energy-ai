@@ -1,40 +1,127 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>AI能源分析（進階版）</title>
+<meta charset="UTF-8">
+<title>AI能源分析</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f4f6f9;
+    padding: 30px;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 8px 15px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.kpi {
+    display: flex;
+    gap: 20px;
+}
+
+.kpi div {
+    flex: 1;
+    background: #eef2f7;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.error {
+    color: red;
+}
+</style>
+
 </head>
+
 <body>
 
-<h1>AI能源分析（AI進階版）</h1>
+<div class="container">
 
+<h1>AI能源分析</h1>
+
+<div class="card">
 <form method="post" enctype="multipart/form-data">
     <input type="file" name="file" required><br><br>
 
     電費單價（元/度）：
-    <input type="number" name="price" value="5" step="0.1"><br><br>
+    <input type="number" name="price" value="5" step="0.01" min="0" required><br><br>
 
-    <button type="submit">上傳並分析</button>
+    <button type="submit">分析</button>
 </form>
+</div>
 
 {% if result %}
-<h2>結果：</h2>
+
+<div class="card">
+<h2>分析結果</h2>
 
 {% if result.error %}
-<p style="color:red;">錯誤：{{ result.error }}</p>
+<p class="error">{{ result.error }}</p>
 {% else %}
-<p>總用電：{{ result.total }}</p>
-<p>平均用電：{{ result.avg }}</p>
-<p>預估電費：{{ result.cost }} 元</p>
-<p>AI預測下一時段用電：{{ result.predicted }}</p>
+
+<div class="kpi">
+    <div>
+        <h3>總用電</h3>
+        <p>{{ result.total }}</p>
+    </div>
+
+    <div>
+        <h3>平均用電</h3>
+        <p>{{ result.avg }}</p>
+    </div>
+
+    <div>
+        <h3>預估電費</h3>
+        <p>{{ result.cost }}</p>
+    </div>
+
+    <div>
+        <h3>預測用電</h3>
+        <p>{{ result.predicted }}</p>
+    </div>
+</div>
+
 {% endif %}
+</div>
 
 {% endif %}
 
 {% if chart %}
-<h2>圖表：</h2>
-<img src="data:image/png;base64,{{ chart }}">
+<div class="card">
+<h2>用電趨勢圖</h2>
+<img src="data:image/png;base64,{{ chart }}" style="width:100%;">
+</div>
 {% endif %}
+
+</div>
 
 </body>
 </html>
