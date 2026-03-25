@@ -54,6 +54,12 @@ button:hover {
     text-align: center;
 }
 
+.info {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+}
+
 .error {
     color: red;
 }
@@ -107,6 +113,11 @@ button:hover {
         <h3>預測用電</h3>
         <p>{{ result.predicted }}</p>
     </div>
+</div>
+
+<div class="info">
+📌 預測用電為下一時段預估值（根據歷史趨勢推算）<br>
+📌 異常用電判定：超過平均值 ± 1.5 倍標準差
 </div>
 
 {% endif %}
