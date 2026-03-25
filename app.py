@@ -5,11 +5,11 @@ import io
 import base64
 import os
 import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 
 app = Flask(__name__)
 
-# ===== 自動找欄位 =====
 def find_column(columns, keywords):
     for col in columns:
         for key in keywords:
@@ -25,7 +25,7 @@ def index():
 
     if request.method == "POST":
         file = request.files.get("file")
-        price = request.form.get("price", 5)  # 預設電價5元
+        price = request.form.get("price", 5)
 
         if not file or file.filename == "":
             return render_template("index.html", result={"error": "請上傳檔案"})
@@ -52,30 +52,32 @@ def index():
 
             df[power_col] = pd.to_numeric(df[power_col], errors='coerce')
 
-            # ===== 計算 =====
+            # ===== 基本計算 =====
             total = df[power_col].sum()
             avg = df[power_col].mean()
 
-            # ===== 電費 =====
             price = float(price)
             cost = total * price
 
-            # ===== 異常偵測 =====
+            # ===== 異常偵測（Z-score）=====
+            mean = df[power_col].mean()
             std = df[power_col].std()
-            threshold = avg + 1.5 * std
-            df["anomaly"] = df[power_col] > threshold
+            df["zscore"] = (df[power_col] - mean) / std
+            df["anomaly"] = abs(df["zscore"]) > 1.5
 
-            # ===== AI預測 =====
+            # ===== AI預測（Polynomial）=====
             X = np.arange(len(df)).reshape(-1, 1)
             y = df[power_col].values
 
-            model = LinearRegression()
-            model.fit(X, y)
+            poly = PolynomialFeatures(degree=2)
+            X_poly = poly.fit_transform(X)
 
-            next_x = np.array([[len(df)]])
+            model = LinearRegression()
+            model.fit(X_poly, y)
+
+            next_x = poly.transform([[len(df)]])
             predicted = model.predict(next_x)[0]
 
-            # ===== 結果 =====
             result = {
                 "total": round(total, 2),
                 "avg": round(avg, 2),
@@ -84,35 +86,26 @@ def index():
             }
 
             # ===== 畫圖 =====
-            plt.figure()
+            plt.figure(figsize=(8,5))
 
             x = df[time_col] if time_col else range(len(df))
 
-            # 正常
-            plt.plot(x, df[power_col], marker='o', label="正常")
+            plt.plot(x, df[power_col], marker='o', label="Usage")
 
-            # 異常點
             anomalies = df[df["anomaly"]]
             if not anomalies.empty:
                 plt.scatter(
                     anomalies[time_col] if time_col else anomalies.index,
                     anomalies[power_col],
                     color='red',
-                    label="異常"
+                    label="Anomaly"
                 )
 
-            # 預測點
-            future_x = len(df)
-            plt.scatter(
-                future_x,
-                predicted,
-                color='green',
-                label="預測"
-            )
+            plt.scatter(len(df), predicted, color='green', label="Prediction")
 
-            plt.title("Power Trend with AI")
+            plt.title("Energy Usage Trend")
             plt.xlabel("Time")
-            plt.ylabel("Power (kW)")
+            plt.ylabel("kW")
             plt.legend()
 
             img = io.BytesIO()
