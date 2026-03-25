@@ -7,6 +7,15 @@ import os
 
 app = Flask(__name__)
 
+# ===== 自動辨識欄位 =====
+def find_column(columns, keywords):
+    for col in columns:
+        for key in keywords:
+            if key in col.lower():
+                return col
+    return None
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
@@ -17,43 +26,58 @@ def index():
 
         # ===== 沒選檔案 =====
         if not file or file.filename == "":
-            result = {"error": "請先選擇CSV檔案"}
+            result = {"error": "請先選擇檔案"}
             return render_template("index.html", result=result, chart=None)
 
         try:
-            # ===== 讀取CSV =====
-            df = pd.read_csv(file)
-            df.columns = df.columns.str.strip()
+            # ===== 自動讀取 CSV / Excel =====
+            filename = file.filename.lower()
 
-            print("📊 CSV內容：")
-            print(df.head())
-
-            # ===== 檢查欄位 =====
-            if "power_kw" not in df.columns:
-                result = {"error": "CSV缺少 power_kw 欄位"}
+            if filename.endswith(".csv"):
+                df = pd.read_csv(file)
+            elif filename.endswith(".xlsx"):
+                df = pd.read_excel(file)
+            else:
+                result = {"error": "只支援 CSV 或 Excel (.xlsx)"}
                 return render_template("index.html", result=result, chart=None)
 
+            # 清除欄位空白
+            df.columns = df.columns.str.strip()
+
+            print("📊 欄位:", df.columns)
+            print(df.head())
+
+            # ===== 自動找用電欄位 =====
+            power_col = find_column(df.columns, ["power", "kw", "用電", "electric"])
+
+            if not power_col:
+                result = {"error": "找不到用電欄位（power_kw / 用電）"}
+                return render_template("index.html", result=result, chart=None)
+
+            # ===== 自動找時間欄位 =====
+            time_col = find_column(df.columns, ["time", "hour", "時間"])
+
             # ===== 轉數字 =====
-            df["power_kw"] = pd.to_numeric(df["power_kw"], errors='coerce')
+            df[power_col] = pd.to_numeric(df[power_col], errors='coerce')
 
             # ===== 計算 =====
-            total = df["power_kw"].sum()
-            avg = df["power_kw"].mean()
+            total = df[power_col].sum()
+            avg = df[power_col].mean()
 
             result = {
                 "total": round(total, 2),
                 "avg": round(avg, 2)
             }
 
-            # ===== 畫圖（不用字體 → 不會炸）=====
+            # ===== 畫圖 =====
             plt.figure()
 
-            if "hour" in df.columns:
-                x = df["hour"]
+            if time_col:
+                x = df[time_col]
             else:
                 x = range(len(df))
 
-            plt.plot(x, df["power_kw"], marker='o')
+            plt.plot(x, df[power_col], marker='o')
             plt.title("Power Trend")
             plt.xlabel("Time")
             plt.ylabel("Power (kW)")
@@ -65,7 +89,7 @@ def index():
             plt.close()
 
         except Exception as e:
-            print("❌ 錯誤：", e)
+            print("❌ 錯誤:", e)
             result = {"error": str(e)}
 
     return render_template("index.html", result=result, chart=chart)
